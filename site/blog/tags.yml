@@ -12,3 +12,8 @@ workflows:
   label: Workflows
   permalink: /workflows
   description: Reusable workflows
+
+docusaurus:
+  label: Docusaurus
+  permalink: /docusaurus
+  description: Docusaurus related posts
