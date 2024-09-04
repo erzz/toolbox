@@ -1,0 +1,317 @@
+name: Execute Semantic Release
+
+permissions:
+  actions: read # enables reading of the actions in the repo
+  contents: write # enables committing back to repo (e.g. updating package.json, CHANGELOG.md, etc)
+  issues: write # the action will update the issues with the released status
+  pull-requests: write # the action will update the pull requests with the released status
+  id-token: write # enables the action to get a token for OIDC authentication with Vault
+
+on:
+  workflow_call:
+    inputs:
+      default-config:
+        required: false
+        type: boolean
+        description:
+          "The workflow provides it's own .releaserc.json configuration. If you wish to provide your
+          own config file, set to `false`"
+        default: true
+      branches:
+        required: false
+        type: string
+        description:
+          "Use to override branches attribute in the .releaserc.json (used mostly for testing)"
+      dry-run:
+        required: false
+        type: boolean
+        description:
+          "Used to only preview the release result and notes for testing. Set to true to enable"
+        default: false
+      create-floating-tag:
+        required: false
+        type: boolean
+        description:
+          "Set to `true` to create an additional floating tag e.g. for release `v1.3.0` also
+          create/move `v1` to the same SHA"
+        default: false
+      # <--------------- SENSITIVE FILES ----------------->
+      create-sensitive-file:
+        required: false
+        type: boolean
+        default: false
+        description:
+          "Allows you to add a sensitive file from a Github secret. Set to `true` and provide
+          `inputs.sensitive-file-path` and `secrets.sensitive-file-content`"
+      sensitive-file-path:
+        required: false
+        type: string
+        description: "The relative path under which to write the sensitive-file e.g. `.netrc`"
+      update-pom:
+        required: false
+        type: boolean
+        description: "If you need to update the pom.xml with the new version set to `true`"
+        default: false
+      # <----------------- NPM SETTINGS ------------------>
+      npm-auth:
+        required: false
+        type: boolean
+        description:
+          "If you need to authenticate with an NPM registry to publish packages set to `true`"
+        default: false
+      npm-registry:
+        required: false
+        type: string
+        description: "The URL to the NPM registry to publish packages to"
+      # <----------------- VAULT SECRET RETRIEVAL ------------------>
+      vault-url:
+        required: false
+        type: string
+        description: "The URL to the HashiCorp Vault instance"
+      vault-namespace:
+        required: false
+        type: string
+        description: "The namespace in HashiCorp Vault to retrieve token secret from."
+      token-vault-secret:
+        required: false
+        type: string
+        description:
+          "The name of the secret in Vault to retrieve token secret from in the format
+          `secret/data/my/secret token | TOKEN ;` Piping into a TOKEN variable is required to be
+          properly referenced in further jobs"
+    secrets:
+      token:
+        required: false
+        description:
+          "A secret containing a Github PAT with relevant permissions to publish releases"
+      auth-token:
+        required: false
+        description:
+          "Arbitrary token to be exposed as environment variable in the format VARIABLE=value"
+      auth-token-2:
+        required: false
+        description:
+          "Arbitrary token to be exposed as environment variable in the format VARIABLE=value"
+      # <---------------- SENSITIVE FILES ---------------->
+      sensitive-file-content:
+        required: false
+        description: "Reference the Github secret that contains the content of your sensitive file"
+      artifactory-user:
+        required: false
+        description: "Username to authenticate with artifactory"
+      artifactory-password:
+        required: false
+        description: "Password or Token to authenticate with artifactory"
+    outputs:
+      new_release_published:
+        description: "Whether a new release was published (true or false)"
+        value: ${{ jobs.release.outputs.new_release_published }}
+      new_release_version:
+        description: "Version of the new release e.g. `1.3.0`"
+        value: ${{ jobs.release.outputs.new_release_version }}
+      new_release_major_version:
+        description: "Major version of the new release e.g. `1`"
+        value: ${{ jobs.release.outputs.new_release_major_version }}
+      new_release_minor_version:
+        description: "Minor version of the new release e.g. `3`"
+        value: ${{ jobs.release.outputs.new_release_minor_version }}
+      new_release_patch_version:
+        description: "Patch version of the new release e.g. `0`"
+        value: ${{ jobs.release.outputs.new_release_patch_version }}
+      new_release_notes:
+        description: "The release notes for the new release"
+        value: ${{ jobs.release.outputs.new_release_notes }}
+      last_release_version:
+        description: "Version of the last release e.g. `1.2.0`, if there was one"
+        value: ${{ jobs.release.outputs.last_release_version }}
+      ref-slug:
+        description: "A URL sanitized version of the github ref"
+        value: ${{ jobs.release.outputs.ref-slug }}
+      short-sha:
+        description: "Captures the short SHA for use in this or later workflow jobs"
+        value: ${{ jobs.release.outputs.short-sha }}
+
+jobs:
+  # <--------------- RUN SEMANTIC RELEASE ---------------->
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    outputs:
+      new_release_published: ${{ steps.semantic-release.outputs.new_release_published }}
+      new_release_version: ${{ steps.semantic-release.outputs.new_release_version }}
+      new_release_notes: ${{ steps.semantic-release.outputs.new_release_notes }}
+      new_release_major_version: ${{ steps.semantic-release.outputs.new_release_major_version }}
+      new_release_minor_version: ${{ steps.semantic-release.outputs.new_release_minor_version }}
+      new_release_patch_version: ${{ steps.semantic-release.outputs.new_release_patch_version }}
+      last_release_version: ${{ steps.semantic-release.outputs.last_release_version }}
+      short-sha: ${{ env.GITHUB_SHA_SHORT }}
+      ref-slug: ${{ env.GITHUB_REF_SLUG_URL }}
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Slugify github variables
+        uses: rlespinasse/github-slug-action@v4.5.0
+
+      - name: Export NPM token
+        run: echo "NPM_TOKEN=${{ secrets.npm-token }}" >> $GITHUB_ENV
+
+      - name: Include sensitive file
+        if: ${{ inputs.create-sensitive-file }}
+        env:
+          # Hack to handle passing of strings with mixed quotes
+          FILE_CONTENT: ${{ secrets.sensitive-file-content }}
+        run: |
+          echo "Creating ${{ inputs.sensitive-file-path }}..."
+          echo "$FILE_CONTENT" > ${{ inputs.sensitive-file-path }}
+
+      - name: Export auth token 1
+        env:
+          TOKEN: ${{ secrets.auth-token }}
+        if: ${{ env.TOKEN != '' }}
+        run: |
+          echo "::add-mask::${TOKEN#*=}"
+          echo "${{ env.TOKEN }}" >> $GITHUB_ENV
+
+      - name: Export auth token 2
+        env:
+          TOKEN: ${{ secrets.auth-token-2 }}
+        if: ${{ env.TOKEN != '' }}
+        run: |
+          echo "::add-mask::${TOKEN#*=}"
+          echo "${{ env.TOKEN }}" >> $GITHUB_ENV
+
+      - name: NPM Auth with Artifactory
+        if: ${{ inputs.npm-auth }}
+        run:
+          curl -u ${{ secrets.artifactory-user }}:${{ secrets.artifactory-password }} ${{
+          inputs.npm-registry }}/artifactory/api/npm/auth >> .npmrc
+
+      - name: Get Configuration
+        if: ${{ inputs.default-config }}
+        run: |
+          echo "Fetching default configuration from erzz/toolbox/configs..."
+          curl --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+            --header 'Accept: application/vnd.github.v3.raw' \
+            --location https://api.github.com/repos/erzz/toolbox/contents/configs/semantic-release/generic.json \
+            --fail \
+            --output .releaserc.json || exit 1
+          cat .releaserc.json
+
+      - name: Get MVN Configuration
+        if: ${{ inputs.update-pom }}
+        run: |
+          echo "Fetching default configuration from erzz/toolbox/configs..."
+          curl --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+            --header 'Accept: application/vnd.github.v3.raw' \
+            --location https://api.github.com/repos/erzz/toolbox/contents/configs/semantic-release/pom.json \
+            --fail \
+            --output .releaserc.json || exit 1
+          cat .releaserc.json
+
+      - name: Get Secrets
+        if: ${{ inputs.token-vault-secret != '' }}
+        id: secrets
+        uses: hashicorp/vault-action@v3
+        with:
+          url: ${{ inputs.vault-url }}
+          role: default
+          method: jwt
+          namespace: ${{ inputs.vault-namespace }}
+          path: ${{ env.GITHUB_REPOSITORY_OWNER_PART }}-${{ env.GITHUB_REPOSITORY_NAME_PART }}
+          secrets: ${{ inputs.token-vault-secret }}
+
+      - name: Set token
+        id: set-token
+        run: |
+          if [ '${{ inputs.token-vault-secret }}' != '' ]; 
+          then
+            echo "Using 'token' secrets from Vault"
+            echo "TOKEN=${{ steps.secrets.outputs.TOKEN }}" >> $GITHUB_OUTPUT
+          else
+            echo "Using 'token' secret from GitHub Secrets"
+            echo "TOKEN=${{ secrets.token }}" >> $GITHUB_OUTPUT
+          fi
+
+      # For some reason conventional-changelog-conventionalcommits still needs to be pinned to 6.1.0
+      # to not just fail silently. Not much I can impact, but adding this here for visibility
+      - name: Semantic Release
+        id: semantic-release
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GITHUB_TOKEN:
+            ${{ steps.set-token.outputs.TOKEN != '' && steps.set-token.outputs.TOKEN ||
+            secrets.GITHUB_TOKEN }}
+        with:
+          semantic_version: v21.1.1
+          branches: ${{ inputs.branches }}
+          dry_run: ${{ inputs.dry-run }}
+          extra_plugins: |
+            @semantic-release/git
+            @semantic-release/changelog
+            @semantic-release/exec
+            conventional-changelog-conventionalcommits@6.1.0
+
+      - name: Success summary
+        if: ${{ steps.semantic-release.outputs.new_release_published == 'true' }}
+        run: |
+          echo "
+          ### :bookmark: ✅ New release created (${{ steps.semantic-release.outputs.new_release_version }})
+
+          **Release Notes:**
+
+          ${{ steps.semantic-release.outputs.new_release_notes }}
+          " >> $GITHUB_STEP_SUMMARY
+
+  floating-tag:
+    name: Create floating tag
+    needs: release
+    if: ${{ needs.release.outputs.new_release_published == 'true' && inputs.create-floating-tag }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Get Release SHA
+        id: sha
+        run: |
+          SHA=$(git show-ref --hash v${{ needs.release.outputs.new_release_version }})
+          echo "SHA for v${{ needs.release.outputs.new_release_version }}: $SHA"
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+
+      - name: Create floating tag
+        uses: "actions/github-script@v7"
+        env:
+          SHA: ${{ steps.sha.outputs.sha }}
+        with:
+          github-token: ${{ secrets.token != '' && secrets.token || secrets.GITHUB_TOKEN }}
+          script: |-
+            const sha = process.env.SHA;
+            const major = 'v${{ needs.release.outputs.new_release_major_version }}';
+
+            // If exists then update, else create
+            try {
+              await github.rest.git.updateRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `tags/${major}`,
+                sha: sha,
+                force: true,
+              });
+              core.info(`Updated ${major} to ${sha}`);
+            } catch(err) {
+              core.info(`Failed to update ${major}: ${err}`);
+              await github.rest.git.createRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `refs/tags/${major}`,
+                sha: sha,
+              });
+              core.info(`Created ${major} at ${sha}`);
+            }
