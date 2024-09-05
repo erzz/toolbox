@@ -3,6 +3,10 @@ import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import {useColorMode} from '@docusaurus/theme-common';
+import {ThemeProvider, createTheme} from '@mui/material/styles';
+const muiLightTheme = createTheme({palette: {mode: 'light'}});
+const muiDarkTheme = createTheme({palette: {mode: 'dark'}});
 
 export default function JobList(props) {
   const wf = require('yaml-loader!@site/.github/workflows/' + props.workflow);
@@ -15,39 +19,43 @@ export default function JobList(props) {
 }
 
 function GetJob({name, steps}) {
+  const {colorMode} = useColorMode();
+  const muiTheme = colorMode === 'dark' ? muiDarkTheme : muiLightTheme;
   return (
-    <div key={name}>
-      <Accordion>
-        <AccordionSummary id={name} expandIcon={<ExpandMoreIcon />}>
-          {name}
-        </AccordionSummary>
-        <AccordionDetails>
-          <table>
-            <thead>
-              <tr key={name}>
-                <th className={styles.step}>Step</th>
-                <th className={styles.uses}>Uses</th>
-                <th className={styles.conditional}>Conditional</th>
-              </tr>
-            </thead>
-            <tbody>
-              {steps.map((step, idx) => (
-                <tr key={idx + step.name}>
-                  <td key={idx + '-name'} className={styles.step}>
-                    {step.name || 'Unnamed Step'}
-                  </td>
-                  <td key={idx + '-uses'} className={styles.uses}>
-                    {step.uses || 'script'}
-                  </td>
-                  <td key={idx + '-if'} className={styles.conditional}>
-                    {(step.if === undefined && 'false') || 'true'}
-                  </td>
+    <ThemeProvider theme={muiTheme}>
+      <div key={name}>
+        <Accordion>
+          <AccordionSummary id={name} expandIcon={<ExpandMoreIcon />}>
+            {name}
+          </AccordionSummary>
+          <AccordionDetails>
+            <table>
+              <thead>
+                <tr key={name}>
+                  <th className={styles.step}>Step</th>
+                  <th className={styles.uses}>Uses</th>
+                  <th className={styles.conditional}>Conditional</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </AccordionDetails>
-      </Accordion>
-    </div>
+              </thead>
+              <tbody>
+                {steps.map((step, idx) => (
+                  <tr key={idx + step.name}>
+                    <td key={idx + '-name'} className={styles.step}>
+                      {step.name || 'Unnamed Step'}
+                    </td>
+                    <td key={idx + '-uses'} className={styles.uses}>
+                      {step.uses || 'script'}
+                    </td>
+                    <td key={idx + '-if'} className={styles.conditional}>
+                      {(step.if === undefined && 'false') || 'true'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </AccordionDetails>
+        </Accordion>
+      </div>
+    </ThemeProvider>
   );
 }
