@@ -1,0 +1,15 @@
+.table {
+  width: 100%;
+}
+
+.secret {
+  width: 15%;
+}
+
+.secretDesc {
+  width: auto;
+}
+
+.secretRequired {
+  width: 10%;
+}

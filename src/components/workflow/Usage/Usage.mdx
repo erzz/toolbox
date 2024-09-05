@@ -1,0 +1,28 @@
+import MinimalExample from "@site/src/components/workflow/MinimalExample";
+import InputList from "@site/src/components/workflow/InputList";
+import SecretList from "@site/src/components/workflow/SecretList";
+import OutputList from "@site/src/components/workflow/OutputList";
+
+## Usage
+
+### Minimal Example
+
+Below is an example of the minimal configuration required to run the workflow. It's based on
+sensible defaults but will not satisfy all use cases.
+
+To see how to customise the job(s) to work for your case, refer to [inputs](#inputs),
+[secrets](#secrets) and the [Additional examples](#additional-examples).
+
+<MinimalExample workflow={props.workflow} version={props.version} />
+
+### Inputs
+
+<InputList workflow={props.workflow} />
+
+### Secrets
+
+<SecretList workflow={props.workflow} />
+
+### Outputs
+
+<OutputList workflow={props.workflow} />

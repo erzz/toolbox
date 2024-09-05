@@ -1,0 +1,15 @@
+.table {
+  width: 100%;
+}
+
+.output {
+  width: 15%;
+}
+
+.outputDesc {
+  width: auto;
+}
+
+.outputValue {
+  width: 45%;
+}

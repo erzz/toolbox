@@ -1,0 +1,24 @@
+.table {
+  width: 100%;
+}
+
+.input {
+  width: 20%;
+}
+
+.type {
+  width: 10%;
+}
+
+.inputDesc {
+  width: auto;
+}
+
+.inputRequired {
+  width: 10%;
+}
+
+.inputDefault {
+  width: 25%;
+  white-space: pre-wrap;
+}

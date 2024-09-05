@@ -15,8 +15,8 @@ configs:
   - semrelease-pom.json
 ---
 
-import Description from "@site/src/components/WorkflowDescription";
-import WorkflowMinExample from "@site/src/components/WorkflowMinExample";
+import Description from "@site/src/components/workflow/Description";
+import Usage from "@site/src/components/workflow/Usage/Usage.mdx";
 
 # Semantic Release
 
@@ -27,3 +27,5 @@ import WorkflowMinExample from "@site/src/components/WorkflowMinExample";
   description={frontMatter.description}
   tags={frontMatter.tags}
 />
+
+<Usage workflow={frontMatter.workflow} version={frontMatter.version} />
