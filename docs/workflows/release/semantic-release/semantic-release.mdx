@@ -11,12 +11,13 @@ tags:
   - versioning
   - release-notes
 configs:
-  - semrelease-generic.json
-  - semrelease-pom.json
+  - semantic-release/generic.json
+  - semantic-release/pom.json
 ---
 
 import Description from "@site/src/components/workflow/Description";
 import Usage from "@site/src/components/workflow/Usage/Usage.mdx";
+import Details from "@site/src/components/workflow/Details/Details.mdx";
 
 # Semantic Release
 
@@ -29,3 +30,5 @@ import Usage from "@site/src/components/workflow/Usage/Usage.mdx";
 />
 
 <Usage workflow={frontMatter.workflow} version={frontMatter.version} />
+
+<Details workflow={frontMatter.workflow} configs={frontMatter.configs} />

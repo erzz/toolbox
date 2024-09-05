@@ -1,0 +1,17 @@
+import SourceLink from "@site/src/components/workflow/SourceLink";
+import JobList from "@site/src/components/workflow/JobList";
+import ConfigFiles from "@site/src/components/workflow/_ConfigFiles";
+
+## Workflow details
+
+### Source code
+
+<SourceLink workflow={props.workflow} />
+
+### Job definitions
+
+<JobList workflow={props.workflow} />
+
+### Configuration Files
+
+<ConfigFiles configs={props.configs} />
