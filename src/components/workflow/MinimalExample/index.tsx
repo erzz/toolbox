@@ -20,11 +20,7 @@ export default function WorkflowMinExample(props) {
     <CodeBlock language="yaml" title="Bare minimum code to insert in your workflow" showLineNumbers>
       {"jobs:\n"}
       {"  " + id + ":\n"}
-      {"    uses: ingka-group-digital/workflows/.github/workflows/" +
-        id +
-        ".yml@v" +
-        props.version +
-        "\n"}
+      {"    uses: erzz/toolbox/.github/workflows/" + id + ".yml@v" + props.version + "\n"}
       {(requiredInputs.length > 0 &&
         "    with:\n" +
           "      " +
