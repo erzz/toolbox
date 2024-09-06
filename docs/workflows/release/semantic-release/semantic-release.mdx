@@ -1,8 +1,9 @@
 ---
 workflow: semantic-release.yml
-version: 2
+version: 1
 status: production
-description: "Automate the release process with semantic versioning and release notes."
+description:
+  "Automate the release process with versioning, CHANGELOG.md, release notes, package publishing etc"
 tags:
   - release
   - semantic
@@ -29,6 +30,115 @@ import Details from "@site/src/components/workflow/Details/Details.mdx";
   tags={frontMatter.tags}
 />
 
+## Purpose
+
+Semantic Release automates the creation of a release and related tasks. It depends on a commit
+convention being used in your repository and by default it assumes that you use the
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) convention. It can be
+configured to handle any sequence of events, such as:
+
+- automated decision of whether or not a release should be made
+- automated semantic versioning
+- automated release notes
+- automated changelog committed back to repository
+- publishing packages/binaries etc
+- and more - provide your own configuration to handle any custom task
+
 <Usage workflow={frontMatter.workflow} version={frontMatter.version} />
+
+## Configuration Notes
+
+### Behaviour
+
+The behaviour of this workflow is configured via a configuration file. There is a
+[standard configuration](https://github.com/erzz/toolbox/blob/main/configs/semantic-release/generic.json)
+file provided by the workflow which can be used as a starting point.
+
+This configuration can be disabled by setting the `default-config` input to `false` and providing
+your own configuration file in your repository. See the
+[semantic-release docs](https://semantic-release.gitbook.io/semantic-release/usage/configuration)
+for more information about providing your own configuration.
+
+### GITHUB_TOKEN or PAT
+
+If the secret `token` is **not** provided, then the workflow will run as and release as the Github
+Bot user. This may not work if certain branch protection mechanisms are in place in which case you
+should provide a personal access token (PAT) for a user with the necessary permissions.
+
+Ensure that the user has at least the `maintainer` role in the repository and that the token has the
+relevant scopes for all the types of activities you want to perform via semantic-release.
+
+If you store the PAT in Hashicorp Vault, you can use it directly from by enabling OIDC
+Authentication between Github Actions and Vault.
+
+### Jira linking
+
+The default configuration includes an item that automatically creates JIRA issues links in the
+release notes from commit messages using the closes, fixes, resolves keywords using a regex match of
+`[A-Za-z]{2,10}-[0-9]{1,5}`
+
+To customise the regex or behaviour, provide your own configuration file in your repository.
+
+### Floating tags
+
+An input is provided to automatically create/update floating tags for the major version.
+
+For example when releasing version `v1.2.3`, a tag of `v1` will be created (if one doesn't exist) or
+will be updated to point to the same commit as `v1.2.3`.
+
+### Updating pom.xml version
+
+Useful in the case of maven project where you want the pom to be updated with the released version.
+
+This requires an alternative configuration provided by the workflow by enabling the
+`update-pom: true` input.
+
+### Build authentication
+
+Secrets are provided for build-time authentication with private package registries such as
+Artifactory, NPM etc.
+
+There are options to provide an `auth-token` and/or `auth-token-2` where the environment variable
+they are exposed as is configurable.
+
+For example you could expose `auth-token: NPM_TOKEN=${{ secrets.SOME_SECRET }}` or
+`auth-token: ARTIFACTORY_AUTH_TOKEN=${{ secrets.SOME_SECRET }}` depending on what your build process
+requires.
+
+There is also an option to write a file from a secret using the `create-sensitive-file` input which
+is useful for creating a maven-settings.xml file for example.
+
+## Additional Examples
+
+### Use your own configuration
+
+Add your own .releaserc.json file to your repository and set the `default-config` input to `false`.
+
+```yaml
+release:
+  uses: erzz/toolbox/.github/workflows/semantic-release.yml@v1
+  with:
+    default-config: false
+  secrets:
+    token: ${{ secrets.RELEASE_TOKEN }}
+```
+
+### Maven projects and using a maven settings file
+
+With this combination of `mvn-settings: true` and `mvn-settings-file:` a special version of the
+workflow will run which will give the ability to both set a maven-settings file plus a
+semantic-release configuration that also updates pom.xml with the newly released version.
+
+```yaml
+release:
+  uses: erzz/toolbox/.github/workflows/semantic-release.yml@v1
+  with:
+    default-config: false
+    create-sensitive-file: true
+    sensitive-file-path: maven-settings.xml
+  secrets:
+    token: ${{ secrets.RELEASE_TOKEN }}
+    sensitive-file-content: ${{ secrets.MAVEN_SETTINGS_FILE }}
+```
 
 <Details workflow={frontMatter.workflow} configs={frontMatter.configs} />
