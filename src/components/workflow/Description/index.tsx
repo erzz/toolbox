@@ -36,7 +36,9 @@ export default function Description(props) {
         {explanation}
       </Admonition>
       <div className={styles.container}>
-        <div>{props.description}</div>
+        <div>
+          <strong>{props.description}</strong>
+        </div>
       </div>
 
       {isGHAS ? (

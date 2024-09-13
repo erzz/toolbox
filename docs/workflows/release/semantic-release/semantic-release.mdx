@@ -4,6 +4,11 @@ version: 1
 status: production
 description:
   "Automate the release process with versioning, CHANGELOG.md, release notes, package publishing etc"
+screenshots:
+  - img: "release/semantic-release/gh.png"
+    description: "Github Actions workflow"
+  - img: "release/semantic-release/workflow.png"
+    description: "Semantic Release workflow"
 tags:
   - release
   - semantic
@@ -19,6 +24,7 @@ configs:
 import Description from "@site/src/components/workflow/Description";
 import Usage from "@site/src/components/workflow/Usage/Usage.mdx";
 import Details from "@site/src/components/workflow/Details/Details.mdx";
+import ScreenShots from "@site/src/components/ScreenShots";
 
 # Semantic Release
 
@@ -29,6 +35,8 @@ import Details from "@site/src/components/workflow/Details/Details.mdx";
   description={frontMatter.description}
   tags={frontMatter.tags}
 />
+
+<ScreenShots screenshots={frontMatter.screenshots} />
 
 ## Purpose
 
