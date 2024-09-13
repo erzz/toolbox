@@ -1,15 +1,19 @@
 import Carousel from "react-material-ui-carousel";
-import {Paper} from "@mui/material";
+import AspectRatio from "@mui/joy/AspectRatio";
+import Card from "@mui/joy/Card";
+import Typography from "@mui/joy/Typography";
 
 export default function ScreenShots(props) {
   let items = props.screenshots;
   function Item(props) {
     const image = require("@site/docs/workflows/" + props.item.img).default;
     return (
-      <Paper>
-        <img src={image} />
-        <p>{props.item.description}</p>
-      </Paper>
+      <Card variant="plain">
+        <AspectRatio variant="soft" objectFit="contain" maxHeight="400px">
+          <img src={image} />
+        </AspectRatio>
+        <Typography level="title-sm">{props.item.description}</Typography>
+      </Card>
     );
   }
 
