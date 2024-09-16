@@ -7,8 +7,6 @@ export default function Description(props) {
   let label = "Status: " + props.status;
   let admonitionType;
   let explanation;
-  const isGHAS = props.tags.includes("ghas");
-  const isCodeQL = props.tags.includes("codeql");
   switch (props.status) {
     case "experimental":
       admonitionType = "warning";
@@ -47,14 +45,14 @@ export default function Description(props) {
         <ScreenShots screenshots={props.screenshots} />
       )}
 
-      {isGHAS ? (
+      {props.tags.includes("ghas") ? (
         <Admonition type="info" title="This workflow requires GitHub Advanced Security">
           You can find instructions to enable it{" "}
           <Link to={"/docs/tutorials-and-guides/ghas"}>here</Link>
         </Admonition>
       ) : null}
 
-      {isCodeQL ? (
+      {props.tags.includes("codeql") ? (
         <Admonition type="tip" title="CodeQL does not 'break the build'">
           <p>
             This workflow uses a CodeQL job. GitHub does not provide a method to break the build
