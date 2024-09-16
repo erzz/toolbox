@@ -1,6 +1,7 @@
 import Admonition from "@theme/Admonition";
 import Link from "@docusaurus/Link";
 import styles from "./styles.module.css";
+import ScreenShots from "../../ScreenShots";
 
 export default function Description(props) {
   let label = "Status: " + props.status;
@@ -35,11 +36,14 @@ export default function Description(props) {
       <Admonition type={admonitionType} title={label}>
         {explanation}
       </Admonition>
+
       <div className={styles.container}>
         <div>
           <strong>{props.description}</strong>
         </div>
       </div>
+
+      <ScreenShots screenshots={props.screenshots} />
 
       {isGHAS ? (
         <Admonition type="info" title="This workflow requires GitHub Advanced Security">
