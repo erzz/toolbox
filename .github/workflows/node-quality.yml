@@ -1,0 +1,319 @@
+name: NodeJS Quality
+
+permissions:
+  checks: write # Used to add checks to pull requests
+  contents: write # Prettier will commit changes back to repository
+  pull-requests: write # Allows some jobs to post comments to pull requests
+
+on:
+  workflow_call:
+    inputs:
+      # <---------------- BUILD SETTINGS ----------------->
+      node-version:
+        type: string
+        description: "The version of NodeJS to use"
+        required: false
+        default: "20"
+      install-command:
+        required: false
+        type: string
+        description:
+          "Used to override the default command to install your dependencies e.g. yarn install"
+        default: "yarn install --silent"
+      path:
+        required: false
+        type: string
+        description: "Relative path from project root to your node application's source files"
+        default: "."
+      # <---------------- ESLINT SETTINGS ---------------->
+      eslint-enable:
+        required: false
+        type: boolean
+        description: "To disable the eslint job set to false"
+        default: true
+      eslint-command:
+        required: false
+        type: string
+        description:
+          "Use to execute a standard ES Lint command (e.g. npm lint:ci) instead of the reviewdog
+          action"
+      eslint-report-path:
+        required: false
+        type: string
+        description:
+          "Relative path to any eslint report file(s) you wish to persist as job artifacts (e.g.
+          eslint-report.*)"
+      eslint-flags:
+        required: false
+        type: string
+        description: "Provide additional flags to the eslint command"
+        default: ". --ext .js,.jsx,.ts,.tsx"
+      eslint-reporter:
+        required: false
+        type: string
+        description:
+          "Choose the reporter to use for eslint (github-pr-review, github-pr-check, github-check)"
+        default: "github-check"
+      eslint-level:
+        required: false
+        type: string
+        description: "Choose the level of eslint to use (error, warning, info)"
+        default: "error"
+      eslint-fail-on-error:
+        required: false
+        type: boolean
+        description: "To not fail the job on eslint errors set to false"
+        default: true
+      # <----------------- TEST SETTINGS ----------------->
+      test-enable:
+        required: false
+        type: boolean
+        description: "To disable the unit-tests job set to false"
+        default: true
+      test-command:
+        required: false
+        type: string
+        description: "Used to override the default command to run your unit tests"
+        default: "yarn test:unit-ci"
+      # <--------------- PRETTIER SETTINGS --------------->
+      prettier-enable:
+        required: false
+        type: boolean
+        description: "To disable the prettier job set to false"
+        default: true
+      prettier-command:
+        required: false
+        type: string
+        description: "Used to override the default command to run prettier"
+        default: "yarn prettier:ci"
+      prettier-commit:
+        required: false
+        type: boolean
+        description:
+          "If using the write mode of prettier, you can set to true if you wish to commit the
+          changes back to the repository"
+        default: false
+      # <------------------ TSC SETTINGS ----------------->
+      tsc-enable:
+        required: false
+        type: boolean
+        description: "To disable the tsc job set to false"
+        default: true
+      tsc-flags:
+        required: false
+        type: string
+        description: "Provide additional flags to the tsc command"
+      tsc-reporter:
+        required: false
+        type: string
+        description:
+          "Choose the reporter to use for tsc (github-pr-review, github-pr-check, github-check)"
+        default: "github-check"
+      tsc-level:
+        required: false
+        type: string
+        description: "Choose the level of tsc to use (error, warning, info)"
+        default: "error"
+      tsc-fail-on-error:
+        required: false
+        type: boolean
+        description: "To not fail the job on tsc errors set to false"
+        default: true
+      # <--------------- ARTIFACT NAMING ------------->
+      artifact-prefix:
+        type: string
+        description:
+          "A prefix to apply to the name of the artifacts to upload (useful for matrix builds)"
+        required: false
+    secrets:
+      # <-------------- BUILD CREDENTIALS ---------------->
+      auth-token:
+        required: false
+        description:
+          "Arbitrary token to be exposed as environment variable in the format VARIABLE=value"
+      auth-token-2:
+        required: false
+        description:
+          "Arbitrary token to be exposed as environment variable in the format VARIABLE=value"
+jobs:
+  # <---------------------- ES LINT ---------------------->
+  lint:
+    name: Lint
+    if: ${{ inputs.eslint-enable }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Export auth token 1
+        env:
+          TOKEN: ${{ secrets.auth-token }}
+        if: ${{ env.TOKEN != '' }}
+        run: |
+          echo "::add-mask::${TOKEN#*=}"
+          echo "${{ env.TOKEN }}" >> $GITHUB_ENV
+
+      - name: Export auth token 2
+        env:
+          TOKEN: ${{ secrets.auth-token-2 }}
+        if: ${{ env.TOKEN != '' }}
+        run: |
+          echo "::add-mask::${TOKEN#*=}"
+          echo "${{ env.TOKEN }}" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        working-directory: ${{ inputs.path }}
+        run: |
+          ${{ inputs.install-command }}
+
+      - name: Execute ESLint (command)
+        working-directory: ${{ inputs.path }}
+        if: ${{ inputs.eslint-command }}
+        run: |
+          ${{ inputs.eslint-command }}
+
+      - name: Upload artifacts (ES Lint Report)
+        uses: actions/upload-artifact@v4
+        if: inputs.eslint-command && inputs.eslint-report-path
+        with:
+          name: "${{ inputs.artifact-prefix }}ES Lint Report"
+          path: ${{ inputs.eslint-report-path }}
+
+      - name: Execute ESLint (reviewdog)
+        if: ${{ !inputs.eslint-command }}
+        uses: reviewdog/action-eslint@v1
+        with:
+          workdir: ${{ inputs.path }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: ${{ inputs.eslint-reporter }}
+          eslint_flags: ${{ inputs.eslint-flags }}
+          level: ${{ inputs.eslint-level }}
+          fail_on_error: ${{ inputs.eslint-fail-on-error }}
+
+  # <---------------------- PRETTIER --------------------->
+  prettier:
+    name: Prettier
+    if: ${{ inputs.prettier-enable }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Export variables
+        run: |
+          echo "${{ secrets.auth-token }}" >> $GITHUB_ENV
+          echo "${{ secrets.auth-token-2 }}" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        working-directory: ${{ inputs.path }}
+        run: |
+          ${{ inputs.install-command }}
+
+      - name: Prettier
+        working-directory: ${{ inputs.path }}
+        run: |
+          ${{ inputs.prettier-command }}
+
+      - name: Commit prettier changes
+        if: ${{ inputs.prettier-commit }}
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: "style: apply prettier formatting"
+
+  # <----------------------- TESTS ----------------------->
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    if: ${{ inputs.test-enable }}
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Export variables
+        run: |
+          echo "${{ secrets.auth-token }}" >> $GITHUB_ENV
+          echo "${{ secrets.auth-token-2 }}" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        working-directory: ${{ inputs.path }}
+        run: |
+          ${{ inputs.install-command }}
+
+      - name: Execute Tests
+        working-directory: ${{ inputs.path }}
+        run: |
+          ${{ inputs.test-command }}
+
+      - name: Upload Unit Test Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "${{ inputs.artifact-prefix }}Unit Test & Coverage Reports"
+          path: |
+            ${{ inputs.path }}/junit.xml
+            ${{ inputs.path }}/test-report.html
+            ${{ inputs.path }}/coverage/test-report.html
+            ${{ inputs.path }}/coverage/cobertura-coverage.xml
+
+  # <----------------------- TSC ------------------------->
+  tsc:
+    name: TSC
+    if: ${{ inputs.tsc-enable }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Slugify github variables
+        uses: rlespinasse/github-slug-action@v4.5.0
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Export auth token 1
+        env:
+          TOKEN: ${{ secrets.auth-token }}
+        if: ${{ env.TOKEN != '' }}
+        run: |
+          echo "::add-mask::${TOKEN#*=}"
+          echo "${{ env.TOKEN }}" >> $GITHUB_ENV
+
+      - name: Export auth token 2
+        env:
+          TOKEN: ${{ secrets.auth-token-2 }}
+        if: ${{ env.TOKEN != '' }}
+        run: |
+          echo "::add-mask::${TOKEN#*=}"
+          echo "${{ env.TOKEN }}" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        working-directory: ${{ inputs.path }}
+        run: |
+          ${{ inputs.install-command }}
+
+      - name: Execute TSC
+        uses: EPMatt/reviewdog-action-tsc@v1
+        with:
+          workdir: ${{ inputs.path }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: ${{ inputs.tsc-reporter }}
+          tsc_flags: ${{ inputs.tsc-flags }}
+          level: ${{ inputs.tsc-level }}
+          fail_on_error: ${{ inputs.tsc-fail-on-error }}

@@ -1,0 +1,337 @@
+name: NodeJS Security
+
+permissions:
+  actions: read # Required for CodeQL
+  checks: write # Required for CodeQL
+  contents: read # Required to clone repository
+  id-token: write # Required for OIDC authentication
+  security-events: write # Required to upload SARIF reports
+  pull-requests: write # Required to update pull requests
+
+on:
+  workflow_call:
+    inputs:
+      # <---------------- BUILD SETTINGS ----------------->
+      node-version:
+        type: string
+        description: "To version of NodeJS to use"
+        required: false
+        default: "20"
+      install-command:
+        required: false
+        type: string
+        description:
+          "Used to override the default command to install your dependencies e.g. yarn install"
+        default: "yarn install --silent"
+      path:
+        required: false
+        type: string
+        description: "Relative path from project root to your node application's source files"
+        default: "."
+      # <---------------- CODEQL SETTINGS ---------------->
+      codeql-enable:
+        required: false
+        type: boolean
+        description: "To disable the CodeQL job set to false"
+        default: true
+      codeql-language:
+        required: false
+        type: string
+        description: "One of `javascript` or `typescript`. Determines CodeQL configuration"
+        default: "javascript"
+      # <------------------ DEPENDENCIES ----------------->
+      deps-enable:
+        required: false
+        type: boolean
+        description: "To disable the dependency scanning job set to false"
+        default: true
+      deps-severity:
+        required: false
+        type: string
+        description: "The minimum severity to report"
+        default: "MEDIUM,HIGH,CRITICAL"
+      deps-timeout:
+        required: false
+        type: string
+        description: "The maximum time to wait for the scan to complete"
+        default: "10m"
+      # <--------------- LICENCES SETTINGS --------------->
+      licence-enable:
+        required: false
+        type: boolean
+        description: "To disable the licence scanning job set to false"
+        default: true
+      licence-default:
+        required: false
+        type: boolean
+        description:
+          "To use your own licence configuration set to false and provide a licence-config"
+        default: true
+      licence-config:
+        required: false
+        type: string
+        description:
+          "The relative path to your own trivy config file for license scanning e.g. `licenses.yml`"
+        default: "licenses.yml"
+      # <----------------- SBOM SETTINGS ----------------->
+      sbom-enable:
+        required: false
+        type: boolean
+        description: "To disable the SBOM job set to false"
+        default: true
+      # <--------------- ARTIFACT NAMING ------------->
+      artifact-prefix:
+        type: string
+        description:
+          "A prefix to apply to the name of the artifacts to upload (useful for matrix builds)"
+        required: false
+    secrets:
+      # <-------------- BUILD CREDENTIALS ---------------->
+      auth-token:
+        required: false
+        description:
+          "Arbitrary token to be exposed as environment variable in the format VARIABLE=value"
+      auth-token-2:
+        required: false
+        description:
+          "Arbitrary token to be exposed as environment variable in the format VARIABLE=value"
+    outputs:
+      codeql-artifact-id:
+        description: "The unique id of the codeql SARIF artifact"
+        value: ${{ jobs.sast.outputs.artifact-id }}
+      codeql-artifact-url:
+        description: "The download URL of the codeql SARIF artifact"
+        value: ${{ jobs.sast.outputs.artifact-url }}
+      ref-slug:
+        description: "A URL sanitized version of the github ref"
+        value: ${{ jobs.sast.outputs.ref-slug }}
+      short-sha:
+        description: "Captures the short SHA for use in this or later workflow jobs"
+        value: ${{ jobs.sast.outputs.short-sha }}
+jobs:
+  # <---------------------- CODEQL ----------------------->
+  sast:
+    name: CodeQL SAST
+    if: ${{ inputs.codeql-enable }}
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      artifact-url: ${{ steps.upload.outputs.artifact-url }}
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Export auth token 1
+        env:
+          TOKEN: ${{ secrets.auth-token }}
+        if: ${{ env.TOKEN != '' }}
+        run: |
+          echo "::add-mask::${TOKEN#*=}"
+          echo "${{ env.TOKEN }}" >> $GITHUB_ENV
+
+      - name: Export auth token 2
+        env:
+          TOKEN: ${{ secrets.auth-token-2 }}
+        if: ${{ env.TOKEN != '' }}
+        run: |
+          echo "::add-mask::${TOKEN#*=}"
+          echo "${{ env.TOKEN }}" >> $GITHUB_ENV
+
+      - name: Run install command
+        working-directory: ${{ inputs.path }}
+        run: |
+          ${{ inputs.install-command }}
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ inputs.codeql-language }}
+
+      - name: Perform CodeQL Analysis
+        id: codeql
+        uses: github/codeql-action/analyze@v3
+
+      - name: Upload Reports
+        id: upload
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "${{ inputs.artifact-prefix }}CodeQL SARIF Report"
+          path: ${{ steps.codeql.outputs.sarif-output }}
+
+  # <-------------------- DEPENDENCIES ------------------->
+  deps:
+    name: Dependency Scan
+    if: ${{ inputs.deps-enable }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Trivy Dependency scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: repo
+          scan-ref: ${{ inputs.path }}
+          ignore-unfixed: true
+          exit-code: 1
+          severity: ${{ inputs.deps-severity }}
+          timeout: ${{ inputs.deps-timeout }}
+
+      - name: Generate sarif report (GHAS)
+        if: always()
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: repo
+          scan-ref: ${{ inputs.path }}
+          ignore-unfixed: true
+          severity: ${{ inputs.deps-severity }}
+          timeout: ${{ inputs.deps-timeout }}
+          format: "sarif"
+          output: "dependency-scan.sarif"
+
+      - name: Upload results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "dependency-scan.sarif"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "${{ inputs.artifact-prefix }}Dependency SARIF Report"
+          path: "dependency-scan.sarif"
+
+  # <---------------- LICENSE SCANNING ------------------->
+  license-scan:
+    name: License Scan
+    if: ${{ inputs.licence-enable }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Get Configuration
+        if: ${{ inputs.licence-default }}
+        run: |
+          echo "Fetching default configuration from erzz/toolbox/configs..."
+          curl --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+            --header 'Accept: application/vnd.github.v3.raw' \
+            --location https://api.github.com/repos/erzz/toolbox/contents/configs/license-scan/licenses.yml \
+            --fail \
+            --output ${{ inputs.licence-config }} || exit 1
+          cat ${{ inputs.licence-config }}
+
+      - name: Export auth token 1
+        env:
+          TOKEN: ${{ secrets.auth-token }}
+        if: ${{ env.TOKEN != '' }}
+        run: |
+          echo "::add-mask::${TOKEN#*=}"
+          echo "${{ env.TOKEN }}" >> $GITHUB_ENV
+
+      - name: Export auth token 2
+        env:
+          TOKEN: ${{ secrets.auth-token-2 }}
+        if: ${{ env.TOKEN != '' }}
+        run: |
+          echo "::add-mask::${TOKEN#*=}"
+          echo "${{ env.TOKEN }}" >> $GITHUB_ENV
+
+      # Required to resolve dependencies & pull the relevant license files from the repo
+      - name: Run install command
+        working-directory: ${{ inputs.path }}
+        run: |
+          ${{ inputs.install-command }}
+
+      - name: Trivy License Scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: rootfs
+          trivy-config: ${{ inputs.licence-config }}
+          exit-code: 1
+          scan-ref: ${{ inputs.path }}
+
+      - name: Generate sarif report (GHAS)
+        if: always()
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: rootfs
+          trivy-config: ${{ inputs.licence-config }}
+          scan-ref: ${{ inputs.path }}
+          format: sarif
+          output: "license-results.sarif"
+
+      - name: Upload results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: license-results.sarif
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "${{ inputs.artifact-prefix }}Licences SARIF Report"
+          path: "license-results.sarif"
+
+  # <----------------------- SBOM ------------------------>
+  sbom:
+    name: SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Export auth token 1
+        env:
+          TOKEN: ${{ secrets.auth-token }}
+        if: ${{ env.TOKEN != '' }}
+        run: |
+          echo "::add-mask::${TOKEN#*=}"
+          echo "${{ env.TOKEN }}" >> $GITHUB_ENV
+
+      - name: Export auth token 2
+        env:
+          TOKEN: ${{ secrets.auth-token-2 }}
+        if: ${{ env.TOKEN != '' }}
+        run: |
+          echo "::add-mask::${TOKEN#*=}"
+          echo "${{ env.TOKEN }}" >> $GITHUB_ENV
+
+      # Required to resolve dependencies & pull the relevant license files from the repo
+      - name: Run install command
+        working-directory: ${{ inputs.path }}
+        run: |
+          ${{ inputs.install-command }}
+
+      - name: Trivy SBOM
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: repo
+          format: spdx-json
+          output: "sbom.spdx.json"
+          scan-ref: ${{ inputs.path }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "${{ inputs.artifact-prefix }}SBOM"
+          path: sbom.spdx.json
