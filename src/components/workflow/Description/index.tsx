@@ -43,7 +43,9 @@ export default function Description(props) {
         </div>
       </div>
 
-      <ScreenShots screenshots={props.screenshots} />
+      {props.screenshots && props.screenshots.length > 0 && (
+        <ScreenShots screenshots={props.screenshots} />
+      )}
 
       {isGHAS ? (
         <Admonition type="info" title="This workflow requires GitHub Advanced Security">
