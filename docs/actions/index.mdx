@@ -1,4 +1,37 @@
 # Github Actions
 
-This section will be populated with information about the Actions provided by the toolbox repo and
-how to use them.
+A reference / registry for actions that are frequently used within the reusable workflows or that I
+am otherwise super dependent on or contribute to.
+
+## Status indicators
+
+- :green_heart: - Active and maintained
+- :warning: - Likely still works but not actively maintained
+- :x: - Retired or no longer works
+
+## :package: Containers
+
+| Name                                                                               | Description                                                                                                              | Status        |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| [erzz/dockle-action](https://github.com/erzz/dockle-action)                        | Lint container images with [Dockle](https://github.com/goodwithtech/dockle) for best practices and basic security issues | :green_heart: |
+| [mr-smithers-excellent/docker-build-push](mr-smithers-excellent/docker-build-push) | The best action for building images with automatic tagging and more                                                      | :green_heart: |
+
+## :chart_with_upwards_trend: Metrics
+
+| Name                                                                  | Description                                                           | Status    |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------- | --------- |
+| [erzz/google-dep-metrics](https://github.com/erzz/google-dep-metrics) | Ping deployment metrics at Google Cloud Monitoring from your workflow | :warning: |
+| [erzz/sigfx-dep-metrics](https://github.com/erzz/sigfx-dep-metrics/)  | Ping deployment metrics at SigFX from your workflow                   | :warning: |
+
+## :notebook: Documentation
+
+| Name                                                                          | Description                                                                  | Status        |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------- |
+| [erzz/commit-plantuml-action](https://github.com/erzz/commit-plantuml-action) | Generates `.png` files from `.puml` files and commits them to the repository | :green_heart: |
+| [erzz/inframap-action](https://github.com/erzz/inframap-action)               | Generate and commit infrastructure diagram based on Terraform plan or State  | :green_heart: |
+
+## :mag_right: SCA / Code Quality
+
+| Name                                                                          | Description                                                                                                | Status        |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------- |
+| [erzz/codeclimate-standalone](https://github.com/erzz/codeclimate-standalone) | Run [CodeClimate](https://codeclimate.com/quality) checks against your repo without a Code Climate account | :green_heart: |
