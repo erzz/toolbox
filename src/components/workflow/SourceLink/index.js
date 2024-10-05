@@ -29,10 +29,7 @@ export default function SourceLink(props) {
             <a
               target="_blank"
               rel="noreferrer"
-              href={
-                'https://github.com/ingka-group-digital/workflows/blob/main/.github/workflows/' +
-                props.workflow
-              }
+              href={'https://github.com/erzz/toolbox/blob/main/.github/workflows/' + props.workflow}
             >
               View on Github
             </a>
