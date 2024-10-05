@@ -113,7 +113,7 @@ For example, for non-typescript projects you can disable the tsc job:
 
 ```yaml
 node-quality:
-  uses: ingka-group-digital/workflows/.github/workflows/node-quality.yml@v2
+  uses: erzz/toolbox/.github/workflows/node-quality.yml@v1
   with:
     tsc-enable: false
 ```
@@ -126,7 +126,7 @@ registries.
 
 ```yaml
 node-tests:
-  uses: ingka-group-digital/workflows/.github/workflows/node-quality.yml@v2
+  uses: erzz/toolbox/.github/workflows/node-quality.yml@v1
   with:
     install-command: "npm ci"
     test-command: |
@@ -163,8 +163,7 @@ job log if they are sending it to file.
 If you wish results to be published in multiple formats such as stdout, html and junit - then a
 package such as [eslint-output](https://www.npmjs.com/package/eslint-output) works fantastic!
 
-You can see [here](https://github.com/ingka-group-digital/workflows/tree/main/tests/node-sample-app)
-for an example.
+You can see [here](https://github.com/erzz/toolbox/tree/main/tests/node-sample-app) for an example.
 
 #### Unit Tests
 

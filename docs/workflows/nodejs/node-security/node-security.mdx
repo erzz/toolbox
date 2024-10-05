@@ -96,7 +96,7 @@ For example, to disable the licence scanning job:
 
 ```yaml
 node-security:
-  uses: ingka-group-digital/workflows/.github/workflows/node-security.yml@v2
+  uses: erzz/toolbox/.github/workflows/node-security.yml@v1
   with:
     licence-enable: false
 ```
@@ -109,7 +109,7 @@ registries.
 
 ```yaml
 node-security:
-  uses: ingka-group-digital/workflows/.github/workflows/node-security.yml@v2
+  uses: erzz/toolbox/.github/workflows/node-security.yml@v1
   with:
     install-command: |
       cp .env.example .env
