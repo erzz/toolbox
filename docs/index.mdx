@@ -1,0 +1,50 @@
+---
+sidebar_position: 0
+---
+
+# Introduction
+
+## What is this?
+
+A collection of reusable workflows, actions, and other GitHub-related content that I use frequently.
+
+## Why?
+
+So I can use it of course! But also, if you wish, you can use it all too.
+
+Even better, if you want a fix, have a suggestion, want to add some workflows or actions, go for it!
+
+## How can I use this?
+
+Reusable workflows are like a pipeline in a box. If you have ever tried to keep workflows consistent
+across multiple repositories, you know how much of a pain it can be. Especially when various actions
+and libs need to be updated over time within workflows that can be 1000's of lines of YAML. This is
+where reusable workflows come in.
+
+A reusable workflow combines numerous related jobs into a single workflow with a specific purpose.
+When the workflows is updated, all repositories that use it will automatically get the changes.
+
+## Example
+
+As a good demonstrative case, the [container](workflows/container/container.mdx) workflow doesn't
+just build a container image, it also authenticates with the registry, pushes the result to the
+registry, checks it for security and best practices, handles things like automatic tagging and
+more - all with a few lines of yaml!
+
+```yaml
+name: Container
+
+on: push
+
+jobs:
+  container:
+    uses: erzz/toolbox/.github/workflows/container.yml@v1
+    with:
+      image: my-image
+    secrets:
+      wip: ${{ secrets.YOUR_SECRET }}
+      service-account: ${{ secrets.YOUR_SECRET }}
+```
+
+That's it! As you build more and more images for different projects the only thing you are likely to
+change is the image name. Everything else is handled for you.
