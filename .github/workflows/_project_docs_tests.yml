@@ -1,0 +1,10 @@
+name: 0-Project Docs
+
+on: push
+
+jobs:
+  quality:
+    uses: ./.github/workflows/node-quality.yml
+
+  security:
+    uses: ./.github/workflows/node-security.yml
