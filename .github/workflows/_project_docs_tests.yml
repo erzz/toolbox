@@ -6,6 +6,7 @@ jobs:
   quality:
     uses: ./.github/workflows/node-quality.yml
     with:
+      eslint-command: yarn lint:ci
       test-command: yarn build
       prettier-command: yarn style
 

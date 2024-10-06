@@ -1,0 +1,22 @@
+{
+  "files": ["."],
+  "formats": [
+    {
+      "name": "stylish",
+      "output": "console"
+    },
+    {
+      "name": "html",
+      "output": "file",
+      "path": "eslint-report.html",
+      "id": "html-report"
+    },
+    {
+      "name": "json",
+      "output": "file",
+      "path": "eslint-report.json",
+      "id": "json-report"
+    }
+  ],
+  "eslintConfig": {}
+}

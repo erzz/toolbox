@@ -10,7 +10,7 @@ export default function ScreenShots(props) {
     return (
       <Card variant="plain">
         <AspectRatio variant="soft" objectFit="contain" maxHeight="400px">
-          <img src={image} />
+          <img src={image} alt={props.item.description} />
         </AspectRatio>
         <Typography level="title-sm">{props.item.description}</Typography>
       </Card>
