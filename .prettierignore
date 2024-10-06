@@ -3,9 +3,9 @@ build
 coverage
 
 # Ignore node stuff
-**/node_modules/**
-**/package-lock.json
-**/yarn.lock
+node_modules/**
+package-lock.json
+yarn.lock
 .yarn/**
 
 # Other random things

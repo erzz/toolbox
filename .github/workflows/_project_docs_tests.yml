@@ -5,6 +5,9 @@ on: push
 jobs:
   quality:
     uses: ./.github/workflows/node-quality.yml
+    with:
+      test-command: yarn build
+      prettier-command: yarn style
 
   security:
     uses: ./.github/workflows/node-security.yml

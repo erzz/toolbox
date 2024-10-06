@@ -12,7 +12,11 @@
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:ci": "eslint-output --ext .js,.jsx,.ts,.tsx .",
+    "style": "prettier . --check",
+    "style:fix": "prettier . --write"
   },
   "dependencies": {
     "@docusaurus/core": "3.5.2",
@@ -35,6 +39,7 @@
     "@docusaurus/module-type-aliases": "3.5.2",
     "@docusaurus/tsconfig": "3.5.2",
     "@docusaurus/types": "3.5.2",
+    "eslint": "^9.12.0",
     "prettier": "^3.3.3",
     "typescript": "~5.5.2"
   },
