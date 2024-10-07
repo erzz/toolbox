@@ -1,0 +1,180 @@
+---
+sidebar_position: 4
+tags:
+  - ghas
+  - security
+---
+
+# Github Advanced Security
+
+## Introduction
+
+GitHub Advanced Security (GHAS) is a set of security features and tools provided by GitHub to help
+developers identify and address security vulnerabilities in their code. It's designed to enhance the
+overall security of software development on the GitHub platform. Key components of GitHub Advanced
+Security include:
+
+- **[Code scanning](https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning)**
+
+  Analyses the code in a GitHub repository to find security vulnerabilities and coding errors. Any
+  problems identified by the analysis are shown in your repository. It also enables 3rd party tool
+  integration through the SARIF report format.
+
+- **[Secret scanning](https://docs.github.com/en/code-security/secret-scanning/about-secret-scanning)**
+
+  Detect secrets, for example keys and tokens, that have been committed to repositories. Secret
+  scanning alerts for users and secret scanning alerts for partners are available and free of charge
+  for public repositories on GitHub.com. If push protection is enabled, it also detects secrets when
+  they are pushed to your repository.
+
+- **[Dependabot](https://docs.github.com/en/code-security/dependabot/dependabot-alerts/about-dependabot-alerts)**
+
+  Detects dependencies that have a known security vulnerability and creates pull requests for
+  patched versions. Show the full impact of changes to dependencies and see details of any
+  vulnerable versions before you merge a pull request.
+
+  :::tip
+
+  Dependabot can also be configured to keep dependencies up to date regardless of whether they have
+  a security vulnerability or not.
+
+  :::
+
+## Enabling Github Advanced Security
+
+All security related jobs should integrate with Github Advanced Security.
+
+This enables you to view and manage all security findings in the Security Overview dashboard for
+your repository.
+
+Workflows and jobs that are integrated with GHAS require that you enable Github Advanced Security
+for your repository first, otherwise. they will fail because they will not be able to upload the
+SARIF reports.
+
+:::tip Admin required
+
+As with most repository configuration, you will need the `Admin` or `Maintainer` role for the
+repository in order to enable Github Advanced Security.
+
+:::
+
+## Dependabot
+
+### Quick Guide
+
+Different features of Dependabot serve different purposes:
+
+1. **Dependabot alerts:** These are notifications you receive when Dependabot detects a
+   vulnerability in one of your dependencies. It's a way to keep you informed about potential
+   security risks in your project.
+2. **Dependabot security updates:** When Dependabot finds a security vulnerability in one of your
+   dependencies, it not only alerts you, but it can also automatically open a pull request to update
+   the vulnerable dependency to a secure version. This feature is specifically focused on addressing
+   security vulnerabilities.
+3. **Grouped security updates:** This featured can be used to combine multiple dependency updates
+   into a single pull request. This can be useful if you have a lot of dependencies or dependencies
+   that usually need to be updated together.
+4. **Dependabot version updates:** This feature is more about keeping your dependencies up-to-date
+   in general, not just in response to security vulnerabilities. Dependabot can periodically check
+   if there are newer versions of your dependencies available and open pull requests to update them.
+   This helps you take advantage of the latest features and improvements in your dependencies.
+
+In summary, while all the above features are related to managing dependencies in your project,
+Dependabot alerts and security updates are specifically about addressing security vulnerabilities,
+while version updates are about keeping your dependencies up-to-date with the latest versions.
+
+### Configuring Dependabot
+
+The configuration file `.github/dependabot.yml` is used to control how Dependabot behaves in your
+repository.
+
+The configuration file can be used to control both Dependabot security updates and Dependabot
+version updates. If you want to receive security updates but not version updates, you can set
+open-pull-requests-limit to 0 for a given package-ecosystem. This will prevent Dependabot from
+opening pull requests for version updates, but it will still open pull requests for security
+updates.
+
+[Read more about configuration options using dependabot.yml](https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file)
+
+## Code Scanning
+
+### Enabling advanced mode
+
+When a repository is enabled with GHAS, it is enabled with default, built in, CodeQL configuration.
+This config is very generic and will try to autodetect the language and autobuild the application.
+
+This may well work for your case, however many projects require special build commands, need to
+authenticate to private registries, or have other special requirements. In this case using the
+advanced configuration via reusable workflows SAST job will be more suitable and allow you to
+customise the job to your needs.
+
+You can follow the steps below to customize your scanning, such as declaring specific build steps,
+folders/file to ignore or exclude during scanning.
+
+In order to enable advanced mode, repository admin can:
+
+1. Go to **Settings** -> **Code security and analysis**
+2. Under the **Code Scanning** section -> **CodeQL analysis** click the **Set up** button
+3. Select the **Advanced** mode option.
+4. It will prompt with a suggested commit for an implementation workflow, click **Cancel Changes**
+   and OK to discard changes
+5. Your repository is now in advanced mode, where you can use any workflow to execute the custom
+   SAST jobs included in these workflows.
+
+Read more about advanced configuration options for
+[Code Scanning](https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/configuring-advanced-setup-for-code-scanning)
+
+### Protection rules for CodeQL
+
+You can create protection rules to prevent merging of pull requests that introduce security issues
+based on severity. This option is found under **Settings -> Code Security and Analysis -> Protection
+Rules**.
+
+## Secret Scanning
+
+Secret scanning will scan your entire Git history on all branches present in your GitHub repository
+for secrets. Additionally, it also scans:
+
+- Descriptions and comments in issues
+- Titles, descriptions, and comments, in open and closed historical issues
+- Titles, descriptions, and comments in pull requests
+- Titles, descriptions, and comments in GitHub Discussions
+
+### Secret Scanning settings
+
+- **[Secret Validation](https://docs.github.com/en/enterprise-cloud@latest/code-security/secret-scanning/secret-scanning-patterns#high-confidence-patterns):**
+  GHAS does validity checks for some of the partner secrets, it checks if the secret identified is
+  still active or inactive.
+
+- **[Push protection](https://docs.github.com/en/enterprise-cloud@latest/code-security/secret-scanning/push-protection-for-repositories-and-organizations#about-push-protection-for-repositories-and-organizations)** -
+  With push protection for repositories and organizations, secret scanning blocks contributors from
+  pushing secrets to a repository and generates an alert whenever a contributor bypasses the
+  protection.
+
+You can configure a `secret_scanning.yml` file to exclude directories from secret scanning,
+including when you use push protection. For example, you can exclude directories that contain tests
+or randomly generated content that would cause a false positive.
+
+Read more about configuring a
+[secret_scanning.yml](https://docs.github.com/en/code-security/secret-scanning/configuring-secret-scanning-for-your-repositories#excluding-directories-from-secret-scanning-alerts-for-users)
+
+## Workflow permissions
+
+Workflows that integrate with Github Advanced Security must have the following permissions:
+
+```yaml
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+  # if the workflow uses OIDC / Workload Identity Federation
+  tokens: write
+```
+
+:::tip
+
+All reusable workflows from this repository request their own permissions! So if you are using a
+reusable workflow you don't need to worry about this setting. But other jobs in the same workflow
+may need to be configured to have the correct permissions.
+
+:::
