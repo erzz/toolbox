@@ -1,0 +1,7 @@
+{
+  "label": "Containers",
+  "link": {
+    "type": "generated-index",
+    "description": "Workflows for building and testing containers"
+  }
+}
