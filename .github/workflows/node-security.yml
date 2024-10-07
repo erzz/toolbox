@@ -8,6 +8,12 @@ permissions:
   security-events: write # Required to upload SARIF reports
   pull-requests: write # Required to update pull requests
 
+# Temporary attempt to address rate-limiting issues that trivy is suffering from until next version
+# of trivy-action is released
+env:
+  TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:2
+  TRIVY_JAVA_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-java-db:1
+
 on:
   workflow_call:
     inputs:
