@@ -104,16 +104,12 @@ const config: Config = {
           title: "Community",
           items: [
             {
-              label: "Stack Overflow",
-              href: "https://stackoverflow.com/questions/tagged/docusaurus",
+              label: "Issues",
+              href: "https://github.com/erzz/toolbox/issues",
             },
             {
-              label: "Discord",
-              href: "https://discordapp.com/invite/docusaurus",
-            },
-            {
-              label: "Twitter",
-              href: "https://twitter.com/docusaurus",
+              label: "Profile",
+              href: "https://github.com/erzz",
             },
           ],
         },
@@ -126,7 +122,7 @@ const config: Config = {
             },
             {
               label: "GitHub",
-              href: "https://github.com/facebook/docusaurus",
+              href: "https://github.com/erzz/toolbox",
             },
           ],
         },
