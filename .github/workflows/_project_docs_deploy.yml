@@ -1,0 +1,10 @@
+name: Project Docs
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-pages:
+    uses: ./.github/workflows/deploy-pages.yml
