@@ -95,8 +95,8 @@ const config: Config = {
           title: "Docs",
           items: [
             {
-              label: "Tutorial",
-              to: "/docs/intro",
+              label: "Workflows",
+              to: "/docs/category/workflows",
             },
           ],
         },
