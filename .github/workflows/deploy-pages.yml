@@ -1,0 +1,119 @@
+name: Deploy to GitHub Pages
+
+permissions:
+  pages: write
+  id-token: write
+  contents: write
+
+on:
+  workflow_call:
+    inputs:
+      install-command:
+        type: string
+        description: "The command to install dependencies required to build site"
+        required: false
+        default: yarn install
+      build-command:
+        type: string
+        description: "The command to build the site"
+        required: false
+        default: yarn build
+      publish-dir:
+        type: string
+        description: "The directory, containing the built site, to publish"
+        required: false
+        default: ./build
+      force-orphan:
+        type: boolean
+        description:
+          "Prevent your repo from bloating by using only the latest commit for gh-pages branch"
+        required: false
+        default: true
+      cname:
+        type: string
+        description: "If fronting with a custom domain, specify the cname"
+        required: false
+      setup-node:
+        type: boolean
+        description: To install a custom version of NodeJS, set to true
+        required: false
+        default: true
+      node-version:
+        type: string
+        description: "The version of NodeJS to install"
+        required: false
+        default: "20"
+      pre-commands:
+        type: string
+        description: "Commands to run before building the site. Use | for multiple commands"
+        required: false
+      artifact:
+        type: boolean
+        description: "If true, the built site will be uploaded as an artifact (can be slow!)"
+        required: false
+        default: false
+    secrets:
+      # <-------------- BUILD CREDENTIALS ---------------->
+      auth-token:
+        required: false
+        description:
+          "Arbitrary token to be exposed as environment variable in the format VARIABLE=value"
+      auth-token-2:
+        required: false
+        description:
+          "Arbitrary token to be exposed as environment variable in the format VARIABLE=value"
+jobs:
+  deploy:
+    name: Deploy to pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup NodeJS
+        if: ${{ inputs.setup-node == 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Export auth token 1
+        env:
+          TOKEN: ${{ secrets.auth-token }}
+        if: ${{ env.TOKEN != '' }}
+        run: |
+          echo "::add-mask::${TOKEN#*=}"
+          echo "${{ env.TOKEN }}" >> $GITHUB_ENV
+
+      - name: Export auth token 2
+        env:
+          TOKEN: ${{ secrets.auth-token-2 }}
+        if: ${{ env.TOKEN != '' }}
+        run: |
+          echo "::add-mask::${TOKEN#*=}"
+          echo "${{ env.TOKEN }}" >> $GITHUB_ENV
+
+      - name: Run pre-commands
+        run: |
+          ${{ inputs.pre-commands }}
+
+      - name: Build Site
+        run: |
+          ${{ inputs.install-command }}
+          ${{ inputs.build-command }}
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ github.token }}
+          publish_dir: ${{ inputs.publish-dir }}
+          cname: ${{ inputs.cname }}
+          force_orphan: ${{ inputs.force-orphan }}
+
+      - name: Upload site as artifact
+        uses: actions/upload-artifact@v4
+        if: ${{ inputs.artifact == 'true' }}
+        with:
+          name: Site
+          path: ${{ inputs.publish-dir }}
