@@ -8,3 +8,5 @@ on:
 jobs:
   deploy-pages:
     uses: ./.github/workflows/deploy-pages.yml
+    with:
+      cname: toolbox.erzz.com
