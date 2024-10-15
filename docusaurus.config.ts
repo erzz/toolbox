@@ -88,6 +88,19 @@ const config: Config = {
         },
       ],
     },
+    algolia: {
+      appId: "XIMDO4KC87",
+      apiKey: "53a5c95a869f6ba0c90a3f080431fd41",
+      indexName: "toolbox-erzz",
+      // Optional: see doc section below
+      contextualSearch: true,
+      // Optional: Algolia search parameters
+      searchParameters: {},
+      // Optional: path for search page that enabled by default (`false` to disable it)
+      searchPagePath: "search",
+      // Optional: whether the insights feature is enabled or not on Docsearch (`false` by default)
+      insights: true,
+    },
     footer: {
       style: "dark",
       links: [
