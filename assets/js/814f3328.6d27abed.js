@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunktoolbox=self.webpackChunktoolbox||[]).push([[7472],{55513:t=>{t.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"What is this site for anyway?","permalink":"/blog/2024/09/03/what-is-this","unlisted":false,"date":"2024-09-03T00:00:00.000Z"}]}')}}]);
