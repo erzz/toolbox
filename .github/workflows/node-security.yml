@@ -180,7 +180,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Trivy Dependency scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           scan-type: repo
           scan-ref: ${{ inputs.path }}
@@ -191,7 +191,7 @@ jobs:
 
       - name: Generate sarif report (GHAS)
         if: always()
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           scan-type: repo
           scan-ref: ${{ inputs.path }}
@@ -262,7 +262,7 @@ jobs:
           ${{ inputs.install-command }}
 
       - name: Trivy License Scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           scan-type: rootfs
           trivy-config: ${{ inputs.licence-config }}
@@ -271,7 +271,7 @@ jobs:
 
       - name: Generate sarif report (GHAS)
         if: always()
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           scan-type: rootfs
           trivy-config: ${{ inputs.licence-config }}
@@ -328,7 +328,7 @@ jobs:
           ${{ inputs.install-command }}
 
       - name: Trivy SBOM
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           scan-type: repo
           format: spdx-json
