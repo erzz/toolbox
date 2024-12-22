@@ -1,3 +1,27 @@
-# The following are all supplied by Docusaurus and/or its express server used for local development
-# The actual site is served as static files in GitHub Pages
+# tests/node-sample-app/yarn.lock
+# -------------------------------
+# this is just a dumb test app that is never deployed
+# or utilised other than checking functionality of
+# related workflows
 
+# find-my-way
+CVE-2024-45813
+
+# yarn.lock
+-----------
+# These deps are used only in the dev server and never
+# actually deployed and not part of the eventual static
+# files that are the site itself
+
+# body-parser
+CVE-2024-45590
+# cross-spawn
+CVE-2024-21538
+# http-proxy-middleware
+CVE-2024-21536
+# nanoid
+CVE-2024-55565
+# path-to-regexp
+CVE-2024-45296
+CVE-2024-52798
+CVE-2024-45296
