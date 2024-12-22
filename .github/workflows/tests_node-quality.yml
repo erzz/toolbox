@@ -1,0 +1,25 @@
+name: Node-Quality Tests
+
+on:
+  push:
+    paths:
+      - ".github/workflows/node-quality.yml"
+      - ".github/workflows/tests_node-quality.yml"
+      - "tests/node-sample-app/*"
+
+jobs:
+  node-quality:
+    uses: ./.github/workflows/node-quality.yml
+    with:
+      node-version: 21
+      eslint-reporter: github-check
+      test-command: yarn build
+      prettier-command: yarn style
+      prettier-commit: false
+
+  node-quality-coverage:
+    uses: ./.github/workflows/node-quality.yml
+    with:
+      coverage-report-enable: true
+      eslint-enable: false
+      path: tests/node-sample-app

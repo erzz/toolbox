@@ -95,6 +95,19 @@ Executes any arbitrary test command(s). If those commands/scripts produce test o
 then they can be published as artifacts. See [configuration tips](#tips-for-script-configuration)
 below.
 
+### Code Coverage Report as comment in Pull Requests
+
+To get a code coverage report as a comment in the pull request, you can use:
+
+```yaml
+node-quality:
+  uses: ingka-group-digital/workflows/.github/workflows/node-quality.yml@v2
+  with:
+    coverage-report-enable: true
+```
+
+Make sure your test-command actually generates a coverage report, otherwise the job will fail.
+
 ## Additional Examples
 
 ### Disable specific jobs
