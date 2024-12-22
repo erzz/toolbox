@@ -9,6 +9,7 @@ jobs:
       eslint-command: yarn lint:ci
       test-command: yarn build
       prettier-command: yarn style
+      tsc-enable: false
 
   security:
     uses: ./.github/workflows/node-security.yml

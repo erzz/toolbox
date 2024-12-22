@@ -13,6 +13,7 @@ permissions:
 env:
   TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:2
   TRIVY_JAVA_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-java-db:1
+  TRIVY_CACHE_DIR: ${{ github.workspace }}/.cache/trivy
 
 on:
   workflow_call:
@@ -91,6 +92,16 @@ on:
         description:
           "A prefix to apply to the name of the artifacts to upload (useful for matrix builds)"
         required: false
+      # <----------------- TRIVY SETTINGS ---------------->
+      trivy-version:
+        required: false
+        type: string
+        description: "Override the version of Trivy (deps/license/sbom) to utilise"
+      trivy-db-cache:
+        required: false
+        type: boolean
+        description: "Enable caching of the Trivy DB (deps/license/sbom)"
+        default: true
     secrets:
       # <-------------- BUILD CREDENTIALS ---------------->
       auth-token:
@@ -119,7 +130,7 @@ jobs:
   sast:
     name: CodeQL SAST
     if: ${{ inputs.codeql-enable }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       artifact-id: ${{ steps.upload.outputs.artifact-id }}
       artifact-url: ${{ steps.upload.outputs.artifact-url }}
@@ -174,38 +185,70 @@ jobs:
   deps:
     name: Dependency Scan
     if: ${{ inputs.deps-enable }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
 
-      - name: Trivy Dependency scan
-        uses: aquasecurity/trivy-action@0.28.0
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.2
         with:
-          scan-type: repo
-          scan-ref: ${{ inputs.path }}
-          ignore-unfixed: true
-          exit-code: 1
-          severity: ${{ inputs.deps-severity }}
-          timeout: ${{ inputs.deps-timeout }}
+          version: ${{ inputs.trivy-version }}
+          cache: true
 
-      - name: Generate sarif report (GHAS)
-        if: always()
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: repo
-          scan-ref: ${{ inputs.path }}
-          ignore-unfixed: true
-          severity: ${{ inputs.deps-severity }}
-          timeout: ${{ inputs.deps-timeout }}
-          format: "sarif"
-          output: "dependency-scan.sarif"
+      - name: Create cache directory
+        run: |
+          echo "Creating Trivy cache directory ${{ env.TRIVY_CACHE_DIR }}..."
+          mkdir -p ${{ env.TRIVY_CACHE_DIR }}
 
-      - name: Upload results to GitHub Security
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Get current date
+        if: ${{ inputs.trivy-db-cache }}
+        id: date
+        shell: bash
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Restore DB from cache
+        if: ${{ inputs.trivy-db-cache }}
+        uses: actions/cache@v4
         with:
-          sarif_file: "dependency-scan.sarif"
+          path: ${{ env.TRIVY_CACHE_DIR }}
+          key: cache-trivy-${{ steps.date.outputs.date }}
+          restore-keys: cache-trivy-
+
+      - name: Execute Scan
+        run: |
+          trivy --version
+          tree ${{ env.TRIVY_CACHE_DIR }}
+          trivy repo \
+            --format json \
+            --output dependency-scan.json \
+            --ignore-unfixed \
+            --severity ${{ inputs.deps-severity }} \
+            --exit-code 0 \
+            --timeout ${{ inputs.deps-timeout }} \
+            --cache-dir ${{ env.TRIVY_CACHE_DIR }} \
+            ${{ inputs.path }}
+
+      - name: Results
+        run: |
+          if [ $(jq '[.Results[] | .Vulnerabilities | length] | add' dependency-scan.json) -gt 0 ]; then
+            echo "❌ Vulnerabilities found"
+            trivy convert \
+              --format table \
+              dependency-scan.json
+            exit 1
+          else
+            echo "✨ No vulnerabilities found"
+            exit 0
+          fi
+
+      - name: Generate SARIF report
+        if: always()
+        run: |
+          trivy convert \
+            --format sarif \
+            --output dependency-scan.sarif \
+            dependency-scan.json
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -214,11 +257,17 @@ jobs:
           name: "${{ inputs.artifact-prefix }}Dependency SARIF Report"
           path: "dependency-scan.sarif"
 
+      - name: Upload results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "dependency-scan.sarif"
+
   # <---------------- LICENSE SCANNING ------------------->
   license-scan:
     name: License Scan
     if: ${{ inputs.licence-enable }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout the code
         uses: actions/checkout@v4
@@ -261,29 +310,67 @@ jobs:
         run: |
           ${{ inputs.install-command }}
 
-      - name: Trivy License Scan
-        uses: aquasecurity/trivy-action@0.28.0
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.2
         with:
-          scan-type: rootfs
-          trivy-config: ${{ inputs.licence-config }}
-          exit-code: 1
-          scan-ref: ${{ inputs.path }}
+          version: ${{ inputs.trivy-version }}
+          cache: true
 
-      - name: Generate sarif report (GHAS)
-        if: always()
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: rootfs
-          trivy-config: ${{ inputs.licence-config }}
-          scan-ref: ${{ inputs.path }}
-          format: sarif
-          output: "license-results.sarif"
+      - name: Create cache directory
+        run: |
+          echo "Creating Trivy cache directory ${{ env.TRIVY_CACHE_DIR }}..."
+          mkdir -p ${{ env.TRIVY_CACHE_DIR }}
 
-      - name: Upload results to GitHub Security
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Get current date
+        if: ${{ inputs.trivy-db-cache }}
+        id: date
+        shell: bash
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Restore DB from cache
+        if: ${{ inputs.trivy-db-cache }}
+        uses: actions/cache@v4
         with:
-          sarif_file: license-results.sarif
+          path: ${{ env.TRIVY_CACHE_DIR }}
+          key: cache-trivy-${{ steps.date.outputs.date }}
+          restore-keys: cache-trivy-
+
+      - name: Execute Scan
+        run: |
+          if [ ! -f .trivyignore ]; then
+            echo "Creating .trivyignore..."
+            touch .trivyignore
+          fi
+          trivy --version
+          tree ${{ env.TRIVY_CACHE_DIR }}
+          trivy rootfs \
+            --format json \
+            --output license-results.json \
+            --exit-code 0 \
+            --config ${{ inputs.licence-config }} \
+            --cache-dir ${{ env.TRIVY_CACHE_DIR }} \
+            ${{ inputs.path }}
+
+      - name: Results
+        run: |
+          if [ $(jq '[.Results[] | .Licenses | length] | add' license-results.json) -gt 0 ]; then
+            echo "❌ Possible license issues found"
+            trivy convert \
+              --format table \
+              license-results.json
+            exit 1
+          else
+            echo "✨ No license issues found"
+            exit 0
+          fi
+
+      - name: Generate SARIF report
+        if: always()
+        run: |
+          trivy convert \
+            --format sarif \
+            --output license-results.sarif \
+            license-results.json
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -292,10 +379,16 @@ jobs:
           name: "${{ inputs.artifact-prefix }}Licences SARIF Report"
           path: "license-results.sarif"
 
+      - name: Upload results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "license-results.sarif"
+
   # <----------------------- SBOM ------------------------>
   sbom:
     name: SBOM
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout the code
         uses: actions/checkout@v4
@@ -327,13 +420,24 @@ jobs:
         run: |
           ${{ inputs.install-command }}
 
-      - name: Trivy SBOM
-        uses: aquasecurity/trivy-action@0.28.0
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.2
         with:
-          scan-type: repo
-          format: spdx-json
-          output: "sbom.spdx.json"
-          scan-ref: ${{ inputs.path }}
+          version: ${{ inputs.trivy-version }}
+          cache: true
+
+      - name: Create cache directory
+        run: |
+          echo "Creating Trivy cache directory ${{ env.TRIVY_CACHE_DIR }}..."
+          mkdir -p ${{ env.TRIVY_CACHE_DIR }}
+
+      - name: Generate SBOM
+        run: |
+          trivy --version
+          trivy repo \
+            --format spdx-json \
+            --output sbom.spdx.json \
+            ${{ inputs.path }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
