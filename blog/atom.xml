@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?><?xml-stylesheet type="text/xsl" href="atom.xsl"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://toolbox.erzz.com/blog</id>
+    <title>Github Toolbox Blog</title>
+    <updated>2024-09-03T00:00:00.000Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://toolbox.erzz.com/blog"/>
+    <subtitle>Github Toolbox Blog</subtitle>
+    <icon>https://toolbox.erzz.com/img/wrench.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[What is this site for anyway?]]></title>
+        <id>https://toolbox.erzz.com/blog/2024/09/03/what-is-this</id>
+        <link href="https://toolbox.erzz.com/blog/2024/09/03/what-is-this"/>
+        <updated>2024-09-03T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[I have a lot of things in progress, delivered internally at work, delivered as open source and some]]></summary>
+        <content type="html"><![CDATA[<p>I have a lot of things in progress, delivered internally at work, delivered as open source and some
+that I just want to share with the world.</p>
+<p>This site is a place for me to share all of that but also act as my own personal portal to things I
+need all the time, yet forget even where I delivered or found them.</p>
+<p>In a nutshell, it will be mostly Github Actions and Reusable workflows for various projects. Often I
+produce something at work and need to replicate it with any internal stuff removed. Sometimes I will
+deliver it first here and then customise it internally for work.</p>
+<p>Other times I will just come up with random scripts, find great references or need to write some
+code to glue something together - with a central place to store it all.</p>
+<p>Hopefully, others will find it useful too - but even if they don't ... I will have at least one
+happy user, me!</p>
+<p>This site will be the documentation and references for the things in the repo. It's built using the
+fantastic <a href="https://docusaurus.io/" target="_blank" rel="noopener noreferrer">Docusaurus</a> extensively at work and it is a great tool for easily
+producing not only documentation, but <strong>AUTOMATED</strong> documentation - which is a godsend instead of
+needing to manually copy paste inputs, outputs, screenshots etc.</p>]]></content>
+        <author>
+            <name>Sean Erswell-Liljefelt</name>
+            <uri>https://github.com/erzz</uri>
+        </author>
+        <category label="GitHub" term="GitHub"/>
+        <category label="Actions" term="Actions"/>
+        <category label="Workflows" term="Workflows"/>
+        <category label="Docusaurus" term="Docusaurus"/>
+    </entry>
+</feed>
