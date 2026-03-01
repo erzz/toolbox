@@ -191,7 +191,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.2
+        uses: aquasecurity/setup-trivy@v0.2.5
         with:
           version: ${{ inputs.trivy-version }}
           cache: true
@@ -311,7 +311,7 @@ jobs:
           ${{ inputs.install-command }}
 
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.2
+        uses: aquasecurity/setup-trivy@v0.2.5
         with:
           version: ${{ inputs.trivy-version }}
           cache: true
@@ -421,7 +421,7 @@ jobs:
           ${{ inputs.install-command }}
 
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.2
+        uses: aquasecurity/setup-trivy@v0.2.5
         with:
           version: ${{ inputs.trivy-version }}
           cache: true
